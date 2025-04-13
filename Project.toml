@@ -1,0 +1,7 @@
+name = "SerializedArrays"
+uuid = "621c0da3-e96e-4f80-bd06-5ae31cdfcb39"
+authors = ["ITensor developers <support@itensor.org> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1.10"

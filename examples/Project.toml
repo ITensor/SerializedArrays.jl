@@ -1,0 +1,5 @@
+[deps]
+SerializedArrays = "621c0da3-e96e-4f80-bd06-5ae31cdfcb39"
+
+[compat]
+SerializedArrays = "0.1"

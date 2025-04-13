@@ -1,0 +1,5 @@
+# Reference
+
+```@autodocs
+Modules = [SerializedArrays]
+```
