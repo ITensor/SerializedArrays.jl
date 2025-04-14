@@ -71,6 +71,20 @@ end
 using Base.Broadcast:
   BroadcastStyle, Broadcasted, DefaultArrayStyle, combine_styles, flatten
 
+struct SerializedArrayStyle{N} <: Base.Broadcast.AbstractArrayStyle{N} end
+Base.BroadcastStyle(arrayt::Type{<:SerializedArray}) = SerializedArrayStyle{ndims(arrayt)}()
+function Base.BroadcastStyle(
+  ::SerializedArrayStyle{N}, ::SerializedArrayStyle{M}
+) where {N,M}
+  SerializedArrayStyle{max(N, M)}()
+end
+function Base.BroadcastStyle(::SerializedArrayStyle{N}, ::DefaultArrayStyle{M}) where {N,M}
+  return SerializedArrayStyle{max(N, M)}()
+end
+function Base.BroadcastStyle(::DefaultArrayStyle{M}, ::SerializedArrayStyle{N}) where {N,M}
+  return SerializedArrayStyle{max(N, M)}()
+end
+
 struct BroadcastSerializedArray{T,N,BC<:Broadcasted{<:SerializedArrayStyle{N}}} <:
        AbstractDiskArray{T,N}
   broadcasted::BC
@@ -88,19 +102,6 @@ function Base.copy(a::BroadcastSerializedArray)
   return copy(Base.Broadcast.broadcasted(a.broadcasted.f, copy.(a.broadcasted.args)...))
 end
 
-struct SerializedArrayStyle{N} <: Base.Broadcast.AbstractArrayStyle{N} end
-Base.BroadcastStyle(arrayt::Type{<:SerializedArray}) = SerializedArrayStyle{ndims(arrayt)}()
-function Base.BroadcastStyle(
-  ::SerializedArrayStyle{N}, ::SerializedArrayStyle{M}
-) where {N,M}
-  SerializedArrayStyle{max(N, M)}()
-end
-function Base.BroadcastStyle(::SerializedArrayStyle{N}, ::DefaultArrayStyle{M}) where {N,M}
-  return SerializedArrayStyle{max(N, M)}()
-end
-function Base.BroadcastStyle(::DefaultArrayStyle{M}, ::SerializedArrayStyle{N}) where {N,M}
-  return SerializedArrayStyle{max(N, M)}()
-end
 function Base.copy(broadcasted::Broadcasted{SerializedArrayStyle{N}}) where {N}
   return BroadcastSerializedArray(flatten(broadcasted))
 end
