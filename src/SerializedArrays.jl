@@ -2,7 +2,6 @@ module SerializedArrays
 
 using ConstructionBase: constructorof
 using DiskArrays: DiskArrays, AbstractDiskArray, Unchunked
-using LinearAlgebra: LinearAlgebra, mul!
 using Serialization: deserialize, serialize
 
 struct SerializedArray{T,N,A<:AbstractArray{T,N},Axes} <: AbstractDiskArray{T,N}
@@ -14,12 +13,16 @@ Base.axes(a::SerializedArray) = getfield(a, :axes)
 arraytype(a::SerializedArray{<:Any,<:Any,A}) where {A} = A
 
 function SerializedArray(file::String, a::AbstractArray)
-  serialize(file, a)
+  serialize(file, vec(a))
   ax = axes(a)
   return SerializedArray{eltype(a),ndims(a),typeof(a),typeof(ax)}(file, ax)
 end
 function SerializedArray(a::AbstractArray)
   return SerializedArray(tempname(), a)
+end
+
+function Base.convert(arrayt::Type{<:SerializedArray}, a::AbstractArray)
+  return arrayt(a)
 end
 
 function Base.similar(a::SerializedArray, elt::Type, dims::Tuple{Vararg{Int}})
@@ -28,7 +31,7 @@ end
 
 function Base.copy(a::SerializedArray)
   arrayt = arraytype(a)
-  return convert(arrayt, deserialize(file(a)))::arrayt
+  return convert(arrayt, reshape(deserialize(file(a)), axes(a)))::arrayt
 end
 
 Base.size(a::SerializedArray) = length.(axes(a))
@@ -104,17 +107,6 @@ end
 
 function Base.copy(broadcasted::Broadcasted{SerializedArrayStyle{N}}) where {N}
   return BroadcastSerializedArray(flatten(broadcasted))
-end
-
-#
-# LinearAlgebra
-#
-
-function LinearAlgebra.mul!(
-  a_dest::AbstractMatrix, a1::SerializedArray, a2::SerializedArray, α::Number, β::Number
-)
-  mul!(a_dest, copy(a1), copy(a2), α, β)
-  return a_dest
 end
 
 end
