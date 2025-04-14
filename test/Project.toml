@@ -1,5 +1,6 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+DiskArrays = "3c3547ce-8d99-4f5e-a174-61eb10b00ae3"
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
