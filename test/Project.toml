@@ -1,7 +1,9 @@
 [deps]
+Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SerializedArrays = "621c0da3-e96e-4f80-bd06-5ae31cdfcb39"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
@@ -10,9 +12,11 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestExtras = "5ed8adda-3752-4e41-b88a-e8b09835ee3a"
 
 [compat]
+Adapt = "4"
 Aqua = "0.8"
 GPUArraysCore = "0.2"
 JLArrays = "0.2"
+LinearAlgebra = "1.10"
 SafeTestsets = "0.1"
 SerializedArrays = "0.1"
 StableRNGs = "1"
