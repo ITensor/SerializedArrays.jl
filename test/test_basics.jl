@@ -1,7 +1,12 @@
 using GPUArraysCore: @allowscalar
 using JLArrays: JLArray
 using SerializedArrays:
-  PermutedSerializedArray, ReshapedSerializedArray, SerializedArray, SubSerializedArray
+  AdjointSerializedArray,
+  PermutedSerializedArray,
+  ReshapedSerializedArray,
+  SerializedArray,
+  SubSerializedArray,
+  TransposeSerializedArray
 using StableRNGs: StableRNG
 using Test: @test, @testset
 using TestExtras: @constinferred
@@ -51,6 +56,33 @@ arrayts = (Array, JLArray)
   @test a isa PermutedSerializedArray{elt,2}
   @test similar(a) isa arrayt{elt,2}
   @test copy(a) == permutedims(x, (2, 1))
+  @test copy(2a) == 2permutedims(x, (2, 1))
+
+  rng = StableRNG(123)
+  x = arrayt(randn(rng, elt, 4, 4))
+  a = transpose(SerializedArray(x))
+  @test a isa TransposeSerializedArray{elt}
+  @test similar(a) isa arrayt{elt,2}
+  @test copy(a) == transpose(x)
+  @test copy(2a) == 2transpose(x)
+
+  rng = StableRNG(123)
+  x = arrayt(randn(rng, elt, 4, 4))
+  a = adjoint(SerializedArray(x))
+  @test a isa AdjointSerializedArray{elt}
+  @test similar(a) isa arrayt{elt,2}
+  @test copy(a) == adjoint(x)
+  @test copy(2a) == 2adjoint(x)
+
+  rng = StableRNG(123)
+  x = arrayt(randn(rng, elt, 4, 4))
+  a = SerializedArray(x)
+  @test transpose(transpose(a)) === a
+  @test adjoint(adjoint(a)) === a
+  if isreal(a)
+    @test adjoint(transpose(a)) === a
+    @test transpose(adjoint(a)) === a
+  end
 
   rng = StableRNG(123)
   x = arrayt(randn(rng, elt, 4, 4))
