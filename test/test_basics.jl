@@ -6,7 +6,9 @@ using SerializedArrays:
   ReshapedSerializedArray,
   SerializedArray,
   SubSerializedArray,
-  TransposeSerializedArray
+  TransposeSerializedArray,
+  disk,
+  memory
 using StableRNGs: StableRNG
 using Test: @test, @testset
 using TestExtras: @constinferred
@@ -21,6 +23,12 @@ arrayts = (Array, JLArray)
   a = SerializedArray(x)
   @test @constinferred(copy(a)) == x
   @test typeof(copy(a)) == typeof(x)
+  @test memory(a) == x
+  @test memory(a) isa arrayt{elt,2}
+  @test memory(x) === x
+  @test disk(a) === a
+  @test disk(x) == a
+  @test disk(x) isa SerializedArray{elt,2,<:arrayt{elt,2}}
 
   x = arrayt(zeros(elt, 4, 4))
   a = SerializedArray(x)

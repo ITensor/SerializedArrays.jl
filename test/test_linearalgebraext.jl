@@ -20,6 +20,14 @@ arrayts = (Array, JLArray)
   @test c == x * y
   @test c isa arrayt{elt,2}
 
+  c = @constinferred(x * b)
+  @test c == x * y
+  @test c isa arrayt{elt,2}
+
+  c = @constinferred(a * y)
+  @test c == x * y
+  @test c isa arrayt{elt,2}
+
   a = permutedims(SerializedArray(x), (2, 1))
   b = permutedims(SerializedArray(y), (2, 1))
   c = @constinferred(a * b)
