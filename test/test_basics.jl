@@ -1,6 +1,7 @@
 using GPUArraysCore: @allowscalar
 using JLArrays: JLArray
-using SerializedArrays: PermutedSerializedArray, ReshapedSerializedArray, SerializedArray
+using SerializedArrays:
+  PermutedSerializedArray, ReshapedSerializedArray, SerializedArray, SubSerializedArray
 using StableRNGs: StableRNG
 using Test: @test, @testset
 using TestExtras: @constinferred
@@ -96,4 +97,17 @@ arrayts = (Array, JLArray)
   copyto!(y, a)
   b = SerializedArray(y)
   @test b == a
+
+  rng = StableRNG(123)
+  x = arrayt(randn(rng, elt, 4, 4))
+  y = @view x[2:3, 2:3]
+  a = SerializedArray(a)
+  b = @view a[2:3, 2:3]
+  @test b isa SubSerializedArray{elt,2}
+  c = 2b
+  @test 2y == copy(c)
+  @allowscalar begin
+    b[1, 1] = 2
+    @test @constinferred(b[1, 1]) == 2
+  end
 end

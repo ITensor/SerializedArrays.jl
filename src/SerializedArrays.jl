@@ -100,10 +100,7 @@ Base.size(a::SerializedArray) = length.(axes(a))
 to_axis(r::AbstractUnitRange) = r
 to_axis(d::Integer) = Base.OneTo(d)
 
-#
-# DiskArrays
-#
-
+# DiskArrays interface
 DiskArrays.haschunks(::SerializedArray) = Unchunked()
 function DiskArrays.readblock!(
   a::SerializedArray{<:Any,N}, aout, i::Vararg{AbstractUnitRange,N}
@@ -136,6 +133,8 @@ struct PermutedSerializedArray{T,N,P<:PermutedDimsArray{T,N}} <:
   permuted_parent::P
 end
 Base.parent(a::PermutedSerializedArray) = parent(getfield(a, :permuted_parent))
+
+file(a::PermutedSerializedArray) = file(parent(a))
 
 perm(a::PermutedSerializedArray) = perm(a.permuted_parent)
 perm(::PermutedDimsArray{<:Any,<:Any,p}) where {p} = p
@@ -189,6 +188,8 @@ struct ReshapedSerializedArray{T,N,P<:AbstractArray{T},Axes} <: AbstractSerializ
 end
 Base.parent(a::ReshapedSerializedArray) = getfield(a, :parent)
 Base.axes(a::ReshapedSerializedArray) = getfield(a, :axes)
+
+file(a::ReshapedSerializedArray) = file(parent(a))
 
 function ReshapedSerializedArray(
   a::AbstractSerializedArray,
@@ -256,6 +257,50 @@ function DiskArrays.writeblock!(
   return nothing
 end
 
+struct SubSerializedArray{T,N,P,I,L} <: AbstractSerializedArray{T,N}
+  sub_parent::SubArray{T,N,P,I,L}
+end
+
+file(a::SubSerializedArray) = file(parent(a))
+
+# Base methods
+function Base.view(a::SerializedArray, i...)
+  return SubSerializedArray(SubArray(a, Base.to_indices(a, i)))
+end
+Base.view(a::SubSerializedArray, i...) = SubSerializedArray(view(a.sub_parent, i...))
+Base.view(a::SubSerializedArray, i::CartesianIndices) = view(a, i.indices...)
+Base.size(a::SubSerializedArray) = size(a.sub_parent)
+Base.axes(a::SubSerializedArray) = axes(a.sub_parent)
+Base.parent(a::SubSerializedArray) = parent(a.sub_parent)
+Base.parentindices(a::SubSerializedArray) = parentindices(a.sub_parent)
+
+function materialize(a::SubSerializedArray)
+  return view(copy(parent(a)), parentindices(a)...)
+end
+function Base.copy(a::SubSerializedArray)
+  return copy(materialize(a))
+end
+
+DiskArrays.haschunks(a::SubSerializedArray) = Unchunked()
+function DiskArrays.readblock!(a::SubSerializedArray, aout, i::OrdinalRange...)
+  if i == axes(a)
+    aout .= copy(a)
+  end
+  aout[i...] = copy(view(a, i...))
+  return nothing
+end
+function DiskArrays.writeblock!(a::SubSerializedArray, ain, i::OrdinalRange...)
+  if i == axes(a)
+    serialize(file(a), ain)
+    return a
+  end
+  a_parent = copy(parent(a))
+  pinds = parentindices(view(a.sub_parent, i...))
+  a_parent[pinds...] = ain
+  serialize(file(a), a_parent)
+  return nothing
+end
+
 #
 # Broadcast
 #
@@ -264,7 +309,9 @@ using Base.Broadcast:
   BroadcastStyle, Broadcasted, DefaultArrayStyle, combine_styles, flatten
 
 struct SerializedArrayStyle{N} <: Base.Broadcast.AbstractArrayStyle{N} end
-Base.BroadcastStyle(arrayt::Type{<:SerializedArray}) = SerializedArrayStyle{ndims(arrayt)}()
+function Base.BroadcastStyle(arrayt::Type{<:AbstractSerializedArray})
+  SerializedArrayStyle{ndims(arrayt)}()
+end
 function Base.BroadcastStyle(
   ::SerializedArrayStyle{N}, ::SerializedArrayStyle{M}
 ) where {N,M}
