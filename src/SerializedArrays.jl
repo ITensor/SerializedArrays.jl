@@ -5,6 +5,8 @@ using ConstructionBase: constructorof
 using DiskArrays: DiskArrays, AbstractDiskArray, Unchunked, readblock!, writeblock!
 using Serialization: deserialize, serialize
 
+memory(a) = a
+
 #
 # AbstractSerializedArray
 #
@@ -12,6 +14,9 @@ using Serialization: deserialize, serialize
 abstract type AbstractSerializedArray{T,N} <: AbstractDiskArray{T,N} end
 const AbstractSerializedMatrix{T} = AbstractSerializedArray{T,2}
 const AbstractSerializedVector{T} = AbstractSerializedArray{T,1}
+
+memory(a::AbstractSerializedArray) = copy(a)
+disk(a::AbstractSerializedArray) = a
 
 function _copyto_write!(dst, src)
   writeblock!(dst, src, axes(src)...)
@@ -30,11 +35,11 @@ function Base.copyto!(dst::AbstractArray, src::AbstractSerializedArray)
 end
 # Fix ambiguity error.
 function Base.copyto!(dst::AbstractSerializedArray, src::AbstractSerializedArray)
-  return copyto!(dst, copy(src))
+  return copyto!(dst, memory(src))
 end
 # Fix ambiguity error.
 function Base.copyto!(dst::AbstractDiskArray, src::AbstractSerializedArray)
-  return copyto!(dst, copy(src))
+  return copyto!(dst, memory(src))
 end
 # Fix ambiguity error.
 function Base.copyto!(dst::AbstractSerializedArray, src::AbstractDiskArray)
@@ -45,14 +50,16 @@ function Base.copyto!(dst::PermutedDimsArray, src::AbstractSerializedArray)
   return _copyto_read!(dst, src)
 end
 
+equals_serialized(a1, a2) = memory(a1) == memory(a2)
+
 function Base.:(==)(a1::AbstractSerializedArray, a2::AbstractSerializedArray)
-  return copy(a1) == copy(a2)
+  return equals_serialized(a1, a2)
 end
 function Base.:(==)(a1::AbstractArray, a2::AbstractSerializedArray)
-  return a1 == copy(a2)
+  return equals_serialized(a1, a2)
 end
 function Base.:(==)(a1::AbstractSerializedArray, a2::AbstractArray)
-  return copy(a1) == a2
+  return equals_serialized(a1, a2)
 end
 
 # # These cause too many ambiguity errors, try bringing them back.
@@ -60,11 +67,11 @@ end
 #   return arrayt(a)
 # end
 # function Base.convert(arrayt::Type{<:AbstractArray}, a::AbstractSerializedArray)
-#   return convert(arrayt, copy(a))
+#   return convert(arrayt, memory(a))
 # end
 # # Fixes ambiguity error.
 # function Base.convert(arrayt::Type{<:Array}, a::AbstractSerializedArray)
-#   return convert(arrayt, copy(a))
+#   return convert(arrayt, memory(a))
 # end
 
 #
@@ -78,6 +85,8 @@ end
 file(a::SerializedArray) = getfield(a, :file)
 Base.axes(a::SerializedArray) = getfield(a, :axes)
 arraytype(a::SerializedArray{<:Any,<:Any,A}) where {A} = A
+
+disk(a::AbstractArray) = SerializedArray(a)
 
 function SerializedArray(file::String, a::AbstractArray)
   serialize(file, a)
@@ -114,10 +123,10 @@ function DiskArrays.readblock!(
   a::SerializedArray{<:Any,N}, aout, i::Vararg{AbstractUnitRange,N}
 ) where {N}
   if i == axes(a)
-    aout .= copy(a)
+    aout .= memory(a)
     return a
   end
-  aout .= @view copy(a)[i...]
+  aout .= @view memory(a)[i...]
   return a
 end
 function DiskArrays.writeblock!(
@@ -127,7 +136,7 @@ function DiskArrays.writeblock!(
     serialize(file(a), ain)
     return a
   end
-  a′ = copy(a)
+  a′ = memory(a)
   a′[i...] = ain
   serialize(file(a), a′)
   return a
@@ -171,7 +180,7 @@ function Base.similar(a::PermutedSerializedArray, elt::Type, dims::Tuple{Vararg{
 end
 
 function materialize(a::PermutedSerializedArray)
-  return PermutedDimsArray(copy(parent(a)), perm(a))
+  return PermutedDimsArray(memory(parent(a)), perm(a))
 end
 function Base.copy(a::PermutedSerializedArray)
   return copy(materialize(a))
@@ -241,7 +250,7 @@ end
 # friendly on GPU. Consider special cases of strded arrays
 # and handle with stride manipulations.
 function Base.copy(a::ReshapedSerializedArray{<:Any,<:Any,<:PermutedSerializedArray})
-  a′ = reshape(copy(parent(a)), axes(a))
+  a′ = reshape(memory(parent(a)), axes(a))
   return a′ isa Base.ReshapedArray ? copy(a′) : a′
 end
 
@@ -254,10 +263,10 @@ function DiskArrays.readblock!(
   a::ReshapedSerializedArray{<:Any,N}, aout, i::Vararg{AbstractUnitRange,N}
 ) where {N}
   if i == axes(a)
-    aout .= copy(a)
+    aout .= memory(a)
     return a
   end
-  aout .= @view copy(a)[i...]
+  aout .= @view memory(a)[i...]
   return nothing
 end
 function DiskArrays.writeblock!(
@@ -267,7 +276,7 @@ function DiskArrays.writeblock!(
     serialize(file(a), ain)
     return a
   end
-  a′ = copy(a)
+  a′ = memory(a)
   a′[i...] = ain
   serialize(file(a), a′)
   return nothing
@@ -307,9 +316,9 @@ end
 DiskArrays.haschunks(a::SubSerializedArray) = Unchunked()
 function DiskArrays.readblock!(a::SubSerializedArray, aout, i::OrdinalRange...)
   if i == axes(a)
-    aout .= copy(a)
+    aout .= memory(a)
   end
-  aout[i...] = copy(view(a, i...))
+  aout[i...] = memory(view(a, i...))
   return nothing
 end
 function DiskArrays.writeblock!(a::SubSerializedArray, ain, i::OrdinalRange...)
@@ -317,7 +326,7 @@ function DiskArrays.writeblock!(a::SubSerializedArray, ain, i::OrdinalRange...)
     serialize(file(a), ain)
     return a
   end
-  a_parent = copy(parent(a))
+  a_parent = memory(parent(a))
   pinds = parentindices(view(a.sub_parent, i...))
   a_parent[pinds...] = ain
   serialize(file(a), a_parent)
@@ -349,7 +358,7 @@ function Base.similar(a::TransposeSerializedArray, elt::Type, dims::Tuple{Vararg
 end
 
 function materialize(a::TransposeSerializedArray)
-  return transpose(copy(parent(a)))
+  return transpose(memory(parent(a)))
 end
 function Base.copy(a::TransposeSerializedArray)
   return copy(materialize(a))
@@ -392,7 +401,7 @@ function Base.similar(a::AdjointSerializedArray, elt::Type, dims::Tuple{Vararg{I
 end
 
 function materialize(a::AdjointSerializedArray)
-  return adjoint(copy(parent(a)))
+  return adjoint(memory(parent(a)))
 end
 function Base.copy(a::AdjointSerializedArray)
   return copy(materialize(a))
@@ -445,7 +454,7 @@ Base.size(a::BroadcastSerializedArray) = size(a.broadcasted)
 Base.broadcastable(a::BroadcastSerializedArray) = a.broadcasted
 function Base.copy(a::BroadcastSerializedArray)
   # Broadcast over the materialized arrays.
-  return copy(Base.Broadcast.broadcasted(a.broadcasted.f, copy.(a.broadcasted.args)...))
+  return copy(Base.Broadcast.broadcasted(a.broadcasted.f, memory.(a.broadcasted.args)...))
 end
 
 function Base.copy(broadcasted::Broadcasted{SerializedArrayStyle{N}}) where {N}
