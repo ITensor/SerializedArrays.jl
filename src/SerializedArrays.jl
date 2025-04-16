@@ -32,7 +32,7 @@ const AbstractSerializedVector{T} = AbstractSerializedArray{T,1}
 disk(a::AbstractSerializedArray) = a
 
 function Base.copy(a::AbstractSerializedArray)
-  return copy(deepmemory(a))
+  return copy(memory(a))
 end
 
 function _copyto_write!(dst, src)
@@ -114,7 +114,7 @@ function adapt_structure_serialized(::DeepMemoryAdaptor, a::SerializedArray)
   return deserialize(file(a))::arraytype(a)
 end
 function Base.copy(a::SerializedArray)
-  return deepmemory(a)
+  return memory(a)
 end
 
 Base.size(a::SerializedArray) = length.(axes(a))
@@ -190,7 +190,7 @@ end
 
 # Special case to eagerly instantiate permutations.
 function adapt_structure_serialized(to::MemoryAdaptor, a::PermutedSerializedArray)
-  return copy(a)
+  return copy(deepmemory(a))
 end
 
 haschunks(a::PermutedSerializedArray) = Unchunked()
@@ -249,14 +249,9 @@ function adapt_structure_serialized(to, a::ReshapedSerializedArray)
   return reshape(adapt_serialized(to, parent(a)), axes(a))
 end
 function Base.copy(a::ReshapedSerializedArray)
-  a′ = deepmemory(a)
-  return a′ isa Base.ReshapedArray ? copy(a′) : a′
-end
-
-# Special case for handling nested wrappers that aren't
-# friendly on GPU. Consider special cases of strded arrays
-# and handle with stride manipulations.
-function Base.copy(a::ReshapedSerializedArray{<:Any,<:Any,<:PermutedSerializedArray})
+  # `memory` instantiates `PermutedSerializedArray`, which is
+  # friendlier for GPU. Consider special cases of strded arrays
+  # and handle with stride manipulations.
   a′ = memory(a)
   return a′ isa Base.ReshapedArray ? copy(a′) : a′
 end
