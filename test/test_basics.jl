@@ -141,7 +141,7 @@ arrayts = (Array, JLArray)
   rng = StableRNG(123)
   x = arrayt(randn(rng, elt, 4, 4))
   y = @view x[2:3, 2:3]
-  a = SerializedArray(a)
+  a = SerializedArray(x)
   b = @view a[2:3, 2:3]
   @test b isa SubSerializedArray{elt,2}
   c = 2b
