@@ -17,9 +17,6 @@ deepmemory(x) = adapt_serialized(DeepMemoryAdaptor(), x)
 
 struct MemoryAdaptor end
 memory(x) = adapt_serialized(MemoryAdaptor(), x)
-function adapt_storage_serialized(::MemoryAdaptor, x)
-  return adapt_serialized(DeepMemoryAdaptor(), x)
-end
 
 #
 # AbstractSerializedArray
@@ -110,9 +107,17 @@ function Base.similar(a::SerializedArray, elt::Type, dims::Tuple{Vararg{Int}})
   return constructorof(arraytype(a)){elt}(undef, dims...)
 end
 
-function adapt_structure_serialized(::DeepMemoryAdaptor, a::SerializedArray)
+function _memory(a::SerializedArray)
   return deserialize(file(a))::arraytype(a)
 end
+
+function adapt_storage_serialized(::DeepMemoryAdaptor, a::SerializedArray)
+  return _memory(a)
+end
+function adapt_storage_serialized(::MemoryAdaptor, a::SerializedArray)
+  return _memory(a)
+end
+
 function Base.copy(a::SerializedArray)
   return memory(a)
 end
