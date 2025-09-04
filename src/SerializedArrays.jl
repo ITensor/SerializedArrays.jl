@@ -4,7 +4,8 @@ export SerializedArray, disk, memory
 
 using Base.PermutedDimsArrays: genperm
 using ConstructionBase: constructorof
-using DiskArrays: DiskArrays, AbstractDiskArray, Unchunked, readblock!, writeblock!
+using DiskArrays:
+  DiskArrays, AbstractDiskArray, PermutedDiskArray, Unchunked, readblock!, writeblock!
 using Serialization: deserialize, serialize
 
 adapt_serialized(to, x) = adapt_structure_serialized(to, x)
@@ -159,26 +160,31 @@ end
 # PermutedSerializedArray
 #
 
-struct PermutedSerializedArray{T,N,P<:PermutedDimsArray{T,N}} <:
+struct PermutedSerializedArray{T,N,perm,iperm,P<:AbstractArray{T,N}} <:
        AbstractSerializedArray{T,N}
-  permuted_parent::P
+  parent::P
 end
-Base.parent(a::PermutedSerializedArray) = parent(getfield(a, :permuted_parent))
+Base.parent(a::PermutedSerializedArray) = getfield(a, :parent)
 
 file(a::PermutedSerializedArray) = file(parent(a))
 
-perm(a::PermutedSerializedArray) = perm(a.permuted_parent)
-perm(::PermutedDimsArray{<:Any,<:Any,p}) where {p} = p
-
-iperm(a::PermutedSerializedArray) = iperm(a.permuted_parent)
-iperm(::PermutedDimsArray{<:Any,<:Any,<:Any,ip}) where {ip} = ip
+# TODO: Use `TypeParameterAccessors.jl`.
+perm(a::PermutedDimsArray{<:Any,<:Any,p}) where {p} = p
+perm(a::PermutedDiskArray{<:Any,<:Any,p}) where {p} = p
+perm(a::PermutedSerializedArray{<:Any,<:Any,p}) where {p} = p
+# TODO: Use `TypeParameterAccessors.jl`.
+iperm(a::PermutedDimsArray{<:Any,<:Any,<:Any,ip}) where {ip} = ip
+iperm(a::PermutedDiskArray{<:Any,<:Any,ip}) where {ip} = ip
+iperm(a::PermutedSerializedArray{<:Any,<:Any,<:Any,ip}) where {ip} = ip
 
 Base.axes(a::PermutedSerializedArray) = genperm(axes(parent(a)), perm(a))
-Base.size(a::PermutedSerializedArray) = length.(axes(a))
+Base.size(a::PermutedSerializedArray) = map(length, axes(a))
 
-function PermutedSerializedArray(a::AbstractArray, perm)
-  a′ = PermutedDimsArray(a, perm)
-  return PermutedSerializedArray{eltype(a),ndims(a),typeof(a′)}(a′)
+function PermutedSerializedArray(a::AbstractArray, p)
+  # This returns a `PermutedDiskArray` as of:
+  # https://github.com/JuliaIO/DiskArrays.jl/pull/249
+  a′ = PermutedDimsArray(a, p)
+  return PermutedSerializedArray{eltype(a),ndims(a),perm(a′),iperm(a′),typeof(a)}(a)
 end
 
 function Base.permutedims(a::AbstractSerializedArray, perm)
