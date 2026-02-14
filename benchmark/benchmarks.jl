@@ -1,5 +1,5 @@
-using SerializedArrays
 using BenchmarkTools
+using SerializedArrays
 
 SUITE = BenchmarkGroup()
 SUITE["rand"] = @benchmarkable rand(10)
