@@ -1,5 +1,5 @@
-using SerializedArrays: SerializedArrays
 using Aqua: Aqua
+using SerializedArrays: SerializedArrays
 using Test: @testset
 
 @testset "Code quality (Aqua.jl)" begin

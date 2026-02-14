@@ -15,7 +15,7 @@ function LinearAlgebra.mul!(
         a1::AbstractSerializedMatrix,
         a2::AbstractSerializedMatrix,
         α::Number,
-        β::Number,
+        β::Number
     )
     return mul_serialized!(a_dest, a1, a2, α, β)
 end
@@ -25,7 +25,7 @@ function LinearAlgebra.mul!(
         a1::AbstractMatrix,
         a2::AbstractSerializedMatrix,
         α::Number,
-        β::Number,
+        β::Number
     )
     return mul_serialized!(a_dest, a1, a2, α, β)
 end
@@ -35,7 +35,7 @@ function LinearAlgebra.mul!(
         a1::AbstractSerializedMatrix,
         a2::AbstractMatrix,
         α::Number,
-        β::Number,
+        β::Number
     )
     return mul_serialized!(a_dest, a1, a2, α, β)
 end

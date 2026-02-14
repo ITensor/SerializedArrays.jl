@@ -17,6 +17,12 @@ arrayts = (Array, JLArray)
     @test a isa SerializedArray{elt, 2, arrayt{elt, 2}}
     b = adapt(SerializedArray, y)
     @test b isa
-        PermutedDimsArray{elt, 2, (2, 1), (2, 1), <:SerializedArray{elt, 2, <:arrayt{elt, 2}}}
+        PermutedDimsArray{
+        elt,
+        2,
+        (2, 1),
+        (2, 1),
+        <:SerializedArray{elt, 2, <:arrayt{elt, 2}},
+    }
     @test parent(b) == a
 end

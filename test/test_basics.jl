@@ -1,14 +1,8 @@
 using GPUArraysCore: @allowscalar
 using JLArrays: JLArray
-using SerializedArrays:
-    AdjointSerializedArray,
-    PermutedSerializedArray,
-    ReshapedSerializedArray,
-    SerializedArray,
-    SubSerializedArray,
-    TransposeSerializedArray,
-    disk,
-    memory
+using SerializedArrays: AdjointSerializedArray, PermutedSerializedArray,
+    ReshapedSerializedArray, SerializedArray, SubSerializedArray, TransposeSerializedArray,
+    disk, memory
 using StableRNGs: StableRNG
 using Test: @test, @testset
 using TestExtras: @constinferred

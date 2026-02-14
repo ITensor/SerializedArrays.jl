@@ -81,7 +81,8 @@ end
 # SerializedArray
 #
 
-struct SerializedArray{T, N, A <: AbstractArray{T, N}, Axes} <: AbstractSerializedArray{T, N}
+struct SerializedArray{T, N, A <: AbstractArray{T, N}, Axes} <:
+    AbstractSerializedArray{T, N}
     file::String
     axes::Axes
 end
@@ -225,7 +226,8 @@ end
 # ReshapedSerializedArray
 #
 
-struct ReshapedSerializedArray{T, N, P <: AbstractArray{T}, Axes} <: AbstractSerializedArray{T, N}
+struct ReshapedSerializedArray{T, N, P <: AbstractArray{T}, Axes} <:
+    AbstractSerializedArray{T, N}
     parent::P
     axes::Axes
 end
@@ -236,7 +238,7 @@ file(a::ReshapedSerializedArray) = file(parent(a))
 
 function ReshapedSerializedArray(
         a::AbstractSerializedArray,
-        ax::Tuple{AbstractUnitRange{<:Integer}, Vararg{AbstractUnitRange{<:Integer}}},
+        ax::Tuple{AbstractUnitRange{<:Integer}, Vararg{AbstractUnitRange{<:Integer}}}
     )
     return ReshapedSerializedArray{eltype(a), length(ax), typeof(a), typeof(ax)}(a, ax)
 end
@@ -245,7 +247,7 @@ function ReshapedSerializedArray(
         shape::Tuple{
             Union{Integer, AbstractUnitRange{<:Integer}},
             Vararg{Union{Integer, AbstractUnitRange{<:Integer}}},
-        },
+        }
     )
     return ReshapedSerializedArray(a, to_axis.(shape))
 end
