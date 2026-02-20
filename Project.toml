@@ -1,6 +1,6 @@
 name = "SerializedArrays"
 uuid = "621c0da3-e96e-4f80-bd06-5ae31cdfcb39"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["ITensor developers <support@itensor.org> and contributors"]
 
 [deps]
@@ -17,7 +17,7 @@ SerializedArraysAdaptExt = "Adapt"
 SerializedArraysLinearAlgebraExt = "LinearAlgebra"
 
 [compat]
-Adapt = "4.3.0"
+Adapt = "4.3"
 ConstructionBase = "1.5.8"
 DiskArrays = "0.4.12"
 LinearAlgebra = "1.10"
