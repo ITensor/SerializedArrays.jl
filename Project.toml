@@ -1,7 +1,10 @@
 name = "SerializedArrays"
 uuid = "621c0da3-e96e-4f80-bd06-5ae31cdfcb39"
-version = "0.2.16"
+version = "0.2.17"
 authors = ["ITensor developers <support@itensor.org> and contributors"]
+
+[workspace]
+projects = ["benchmark", "dev", "docs", "examples", "test"]
 
 [deps]
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
