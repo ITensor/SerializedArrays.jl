@@ -1,11 +1,12 @@
 using Documenter: Documenter, DocMeta, deploydocs, makedocs
+using ITensorFormatter: ITensorFormatter
 using SerializedArrays: SerializedArrays
 
 DocMeta.setdocmeta!(
     SerializedArrays, :DocTestSetup, :(using SerializedArrays); recursive = true
 )
 
-include("make_index.jl")
+ITensorFormatter.make_index!(pkgdir(SerializedArrays))
 
 makedocs(;
     modules = [SerializedArrays],
